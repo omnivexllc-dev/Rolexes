@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { WatchSVG } from "./WatchSVG";
 import { Watch, DesignConfigState } from "../types";
 import { Sparkles, Save, CreditCard } from "lucide-react";
+import { ThreeDContainer } from "./ThreeDContainer";
 
 interface BespokeBuilderProps {
   onSaveToVault: (customWatch: Watch) => void;
@@ -162,16 +163,20 @@ export const BespokeBuilder: React.FC<BespokeBuilderProps> = ({ onSaveToVault, o
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start bg-[#0d0d0d] border border-[#1f1f1f] p-6 md:p-10 rounded-sm">
           {/* LEFT: Live Vector Preview */}
-          <div className="lg:col-span-5 flex flex-col items-center justify-center bg-[#0a0a0a] rounded-sm p-8 border border-[#1f1f1f] min-h-[400px] relative overflow-hidden">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,#c5a059,transparent_75%)] opacity-[0.06] pointer-events-none" />
-            <WatchSVG
-              dialColor={config.dialColor}
-              material={config.material}
-              bezelStyle={config.bezelStyle}
-              bracelet={config.bracelet}
-              collection={selectedBase.type}
-              size="xl"
-            />
+          <div className="lg:col-span-5 flex flex-col items-center justify-between bg-[#0a0a0a] rounded-sm p-8 border border-[#1f1f1f] min-h-[400px] relative overflow-hidden">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,#c5a059,transparent_75%)] opacity-[0.03] pointer-events-none" />
+            
+            <ThreeDContainer className="w-full max-w-[280px] p-4 flex items-center justify-center bg-[#0d0d0d]/40 rounded border border-[#1f1f1f]/50 shadow-inner" intensity={18}>
+              <WatchSVG
+                dialColor={config.dialColor}
+                material={config.material}
+                bezelStyle={config.bezelStyle}
+                bracelet={config.bracelet}
+                collection={selectedBase.type}
+                size="xl"
+              />
+            </ThreeDContainer>
+
             {/* Spec tags overlay */}
             <div className="mt-8 flex flex-wrap gap-2 justify-center max-w-xs relative z-10">
               <span className="bg-[#0d0d0d] px-2.5 py-1 text-3xs font-semibold uppercase tracking-wider text-[#888] border border-[#1f1f1f]">

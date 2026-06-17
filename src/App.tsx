@@ -8,6 +8,7 @@ import { CompareDrawer } from "./components/CompareDrawer";
 import { VaultDrawer } from "./components/VaultDrawer";
 import { CheckoutModal } from "./components/CheckoutModal";
 import { OrderTracker } from "./components/OrderTracker";
+import { ThreeDContainer } from "./components/ThreeDContainer";
 import {
   Clock,
   Compass,
@@ -653,25 +654,30 @@ export default function App() {
                           </div>
                         )}
 
-                        {/* Beautifully Rendered live watch */}
-                        <div
-                          className="w-full aspect-square flex items-center justify-center p-6 bg-[#141414] border border-[#1f1f1f] rounded-sm transition-all duration-500 cursor-pointer relative overflow-hidden group/thumb"
-                          onClick={() => setSelectedDetailWatch(watch)}
+                        {/* Beautifully Rendered live watch with dynamic 3D tilt effects */}
+                        <ThreeDContainer 
+                          className="w-full aspect-square text-center flex items-center justify-center p-6 bg-[#141414] border border-[#1f1f1f] rounded-sm transition-all duration-500 cursor-pointer relative overflow-hidden group/thumb animate-fade-in"
+                          intensity={12}
                         >
-                          {/* Pulsing visual gold radial gradient backdrop */}
-                          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,#c5a059,transparent_70%)] opacity-[0.05] group-hover:opacity-[0.12] transition-opacity duration-700 pointer-events-none" />
-                          
-                          <div className="transform group-hover:scale-105 transition-transform duration-500">
-                            <WatchSVG
-                              dialColor={watch.dialColor}
-                              material={watch.material}
-                              bezelStyle={watch.bezelStyle}
-                              bracelet={watch.bracelet}
-                              collection={watch.collection}
-                              size="md"
-                            />
+                          <div 
+                            className="w-full h-full flex items-center justify-center relative"
+                            onClick={() => setSelectedDetailWatch(watch)}
+                          >
+                            {/* Pulsing visual gold radial gradient backdrop */}
+                            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,#c5a059,transparent_70%)] opacity-[0.05] group-hover:opacity-[0.14] transition-opacity duration-700 pointer-events-none" />
+                            
+                            <div className="transform group-hover:scale-105 transition-transform duration-500">
+                              <WatchSVG
+                                dialColor={watch.dialColor}
+                                material={watch.material}
+                                bezelStyle={watch.bezelStyle}
+                                bracelet={watch.bracelet}
+                                collection={watch.collection}
+                                size="md"
+                              />
+                            </div>
                           </div>
-                        </div>
+                        </ThreeDContainer>
 
                         {/* Card Details information */}
                         <div className="pt-4 flex flex-col flex-1 justify-between font-sans">
@@ -765,8 +771,8 @@ export default function App() {
                 </span>
               </div>
 
-              {/* Watch Illustration */}
-              <div className="my-8 flex justify-center bg-[#141414] border border-[#1f1f1f] rounded-sm p-6 relative overflow-hidden">
+              {/* Watch Illustration with 3D tactile perspective overlay */}
+              <ThreeDContainer className="my-8 flex justify-center bg-[#141414] border border-[#1f1f1f] rounded-sm p-6 relative overflow-hidden" intensity={15}>
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,#c5a059,transparent_75%)] opacity-[0.06] pointer-events-none" />
                 <WatchSVG
                   dialColor={selectedDetailWatch.dialColor}
@@ -776,7 +782,7 @@ export default function App() {
                   collection={selectedDetailWatch.collection}
                   size="md"
                 />
-              </div>
+              </ThreeDContainer>
 
               {/* Watch Technical Narrative */}
               <div className="space-y-2 pb-4 border-b border-[#1f1f1f]">
