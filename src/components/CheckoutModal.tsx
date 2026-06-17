@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Watch } from "../types";
+import { Watch, Order } from "../types";
 import { X, Award, FileCheck } from "lucide-react";
 import { WatchSVG } from "./WatchSVG";
 
@@ -7,12 +7,14 @@ interface CheckoutModalProps {
   watch: Watch | null;
   isOpen: boolean;
   onClose: () => void;
+  onOrderPlaced?: (order: Order) => void;
 }
 
 export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   watch,
   isOpen,
   onClose,
+  onOrderPlaced,
 }) => {
   if (!isOpen || !watch) return null;
 
@@ -39,7 +41,28 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
     setGeneratedSerial(serial);
     setIsSuccess(true);
+
+    if (onOrderPlaced) {
+      onOrderPlaced({
+        orderNumber: serial,
+        clientName,
+        clientEmail,
+        clientPhone,
+        deliveryMethod,
+        customEngraving: customEngraving || undefined,
+        premiumBox,
+        watch,
+        price: watch.price + (premiumBox ? 350 : 0),
+        date: new Date().toLocaleDateString("en-US", {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        }),
+        status: "Registered",
+      });
+    }
   };
+
 
   const finalPrice = watch.price + (premiumBox ? 350 : 0);
 
@@ -139,7 +162,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                 Dismiss Ledger
               </button>
               <span className="text-[10px] text-[#666] mt-3 font-mono leading-normal">
-                Ledger Sync Certified under AES-Swiss protocols.
+                Ledger Sync Certified under AES-Swiss protocols. For urgent questions, contact Support at <a href="tel:8182087120" className="text-[#c5a059] hover:underline">818-208-7120</a>.
               </span>
             </div>
           </div>
@@ -188,7 +211,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
               <div>
                 <h3 className="text-lg md:text-xl font-serif text-[#e5e5e5]">Bespoke Client Inquiry</h3>
                 <p className="text-[#888] text-2xs leading-relaxed mt-1">
-                  Private registration for exclusive timepieces. All data is encrypted and handled in compliance with Swiss banking secrecy.
+                  Private registration for exclusive timepieces. All data is encrypted and handled in compliance with Swiss banking secrecy. For direct concierge assistance or immediate customer support, call us at <a href="tel:8182087120" className="text-[#c5a059] font-semibold hover:underline">818-208-7120</a>.
                 </p>
               </div>
 

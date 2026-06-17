@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
 import { WATCHES } from "./data/watches";
-import { FilterState, Watch } from "./types";
+import { FilterState, Watch, Order } from "./types";
 import { WatchSVG } from "./components/WatchSVG";
 import { FiltersBar } from "./components/FiltersBar";
 import { BespokeBuilder } from "./components/BespokeBuilder";
 import { CompareDrawer } from "./components/CompareDrawer";
 import { VaultDrawer } from "./components/VaultDrawer";
 import { CheckoutModal } from "./components/CheckoutModal";
+import { OrderTracker } from "./components/OrderTracker";
 import {
   Clock,
   Compass,
@@ -20,12 +21,14 @@ import {
   Sparkles,
   Heart,
   ChevronLast,
-  X
+  X,
+  Wallet,
+  AlertTriangle
 } from "lucide-react";
 
 export default function App() {
   // Views navigation
-  const [activeTab, setActiveTab] = useState<"browse" | "customizer">("browse");
+  const [activeTab, setActiveTab] = useState<"browse" | "customizer" | "tracker">("browse");
 
   // Filter State
   const [filters, setFilters] = useState<FilterState>({
@@ -42,12 +45,69 @@ export default function App() {
   // Dynamic lists
   const [compareList, setCompareList] = useState<Watch[]>([]);
   const [vault, setVault] = useState<Watch[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
 
-  // Open modals / Drawers triggers
+    // Open modals / Drawers triggers
   const [isVaultOpen, setIsVaultOpen] = useState(false);
   const [isCompareOpen, setIsCompareOpen] = useState(false);
   const [selectedDetailWatch, setSelectedDetailWatch] = useState<Watch | null>(null);
   const [selectedCheckoutWatch, setSelectedCheckoutWatch] = useState<Watch | null>(null);
+
+  // MetaMask Wallet Sync States
+  const [walletAddress, setWalletAddress] = useState<string | null>(() => {
+    return localStorage.getItem("luxury_wallet_address") || null;
+  });
+  const [isWalletConnecting, setIsWalletConnecting] = useState(false);
+  const [walletError, setWalletError] = useState<string | null>(null);
+  const [isWalletMenuOpen, setIsWalletMenuOpen] = useState(false);
+
+  const connectWallet = async () => {
+    setIsWalletConnecting(true);
+    setWalletError(null);
+    try {
+      if (typeof window !== "undefined" && (window as any).ethereum) {
+        try {
+          const accounts = await (window as any).ethereum.request({
+            method: "eth_requestAccounts",
+          });
+          if (accounts && accounts[0]) {
+            setWalletAddress(accounts[0]);
+            localStorage.setItem("luxury_wallet_address", accounts[0]);
+            setWalletError(null);
+          } else {
+            throw new Error("No accounts found in MetaMask.");
+          }
+        } catch (err: any) {
+          console.error("MetaMask connection failed:", err);
+          throw new Error(err?.message || "Failed to connect to MetaMask");
+        }
+      } else {
+        throw new Error("Failed to connect to MetaMask: Extension not detected in preview browser.");
+      }
+    } catch (err: any) {
+      setWalletError(err.message || "Failed to connect to MetaMask");
+    } finally {
+      setIsWalletConnecting(false);
+    }
+  };
+
+  const simulateWalletConnect = () => {
+    setIsWalletConnecting(true);
+    setWalletError(null);
+    setTimeout(() => {
+      const mockAddr = "0x" + Array.from({ length: 40 }, () => Math.floor(Math.random() * 16).toString(16)).join("");
+      setWalletAddress(mockAddr);
+      localStorage.setItem("luxury_wallet_address", mockAddr);
+      setIsWalletConnecting(false);
+      setWalletError(null);
+    }, 600);
+  };
+
+  const disconnectWallet = () => {
+    setWalletAddress(null);
+    localStorage.removeItem("luxury_wallet_address");
+    setWalletError(null);
+  };
 
   // Live Swiss Clock Interval
   const [genevaTime, setGenevaTime] = useState("");
@@ -71,6 +131,15 @@ export default function App() {
         console.error("Failed to load comparison desk:", e);
       }
     }
+
+    const savedOrders = localStorage.getItem("luxury_collector_orders");
+    if (savedOrders) {
+      try {
+        setOrders(JSON.parse(savedOrders));
+      } catch (e) {
+        console.error("Failed to load orders:", e);
+      }
+    }
   }, []);
 
   // Sync vault to localStorage
@@ -83,6 +152,12 @@ export default function App() {
     setCompareList(newCompare);
     localStorage.setItem("luxury_collector_compare", JSON.stringify(newCompare));
   };
+
+  const saveOrdersToLocalStorage = (newOrders: Order[]) => {
+    setOrders(newOrders);
+    localStorage.setItem("luxury_collector_orders", JSON.stringify(newOrders));
+  };
+
 
   // Geneva Clock updating
   useEffect(() => {
@@ -237,15 +312,129 @@ export default function App() {
           </div>
         </div>
 
-        {/* Live Zurich/Geneva GMT Timepiece */}
-        <div className="hidden lg:flex items-center gap-1.5 px-3 py-1 bg-[#0d0d0d] border border-[#1f1f1f] rounded-full text-[10px] text-[#888] font-semibold uppercase tracking-wider shadow-inner">
-          <Clock className="w-3.5 h-3.5 text-[#c5a059]" />
-          <span>Geneva Time:</span>
-          <span className="font-mono text-[#c5a059] font-bold">{genevaTime || "12:15:32"}</span>
+        {/* Live Zurich/Geneva GMT Timepiece & Concierge Support */}
+        <div className="hidden md:flex items-center gap-4">
+          <div className="hidden lg:flex items-center gap-1.5 px-3 py-1 bg-[#0d0d0d] border border-[#1f1f1f] rounded-full text-[10px] text-[#888] font-semibold uppercase tracking-wider shadow-inner">
+            <Clock className="w-3.5 h-3.5 text-[#c5a059]" />
+            <span>Geneva Time:</span>
+            <span className="font-mono text-[#c5a059] font-bold">{genevaTime || "12:15:32"}</span>
+          </div>
+
+          <div className="flex items-center gap-1.5 px-3 py-1 bg-[#0d0d0d] border border-[#1f1f1f] rounded-full text-[10px] text-[#888] font-semibold uppercase tracking-wider shadow-inner">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#c5a059] animate-pulse"></span>
+            <span className="text-[#666]">Support:</span>
+            <a href="tel:8182087120" className="text-[#c5a059] font-mono font-bold tracking-wider hover:underline">(818) 208-7120</a>
+          </div>
         </div>
 
         {/* Vault & Compare Desk Nav Triggers */}
         <div className="flex items-center gap-3">
+          {/* MetaMask Web3 Ledger Sync */}
+          <div className="relative">
+            <button
+              onClick={() => setIsWalletMenuOpen(!isWalletMenuOpen)}
+              className={`px-3 py-1.5 text-xs font-semibold uppercase tracking-wider border rounded-sm transition-all duration-300 flex items-center gap-1.5 cursor-pointer bg-[#0d0d0d] hover:bg-[#141414] ${
+                walletAddress ? "border-[#c5a059] text-[#c5a059]" : "border-[#1f1f1f] text-[#888]"
+              }`}
+            >
+              <Wallet className="w-3.5 h-3.5" />
+              <span className="hidden md:inline font-mono">
+                {walletAddress ? `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}` : "Sync Ledger"}
+              </span>
+              <span className="md:hidden">
+                {walletAddress ? "Sync" : "Sync"}
+              </span>
+              {walletAddress ? (
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+              ) : (
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+              )}
+            </button>
+
+            {isWalletMenuOpen && (
+              <div className="absolute right-0 mt-2 w-72 bg-[#0a0a0a] border border-[#1f1f1f] p-4 rounded-sm shadow-xl z-50 animate-fade-in text-left">
+                <div className="flex items-center justify-between border-b border-[#1f1f1f] pb-2 mb-3">
+                  <span className="text-3xs font-extrabold uppercase tracking-widest text-[#666]">
+                    Swiss Web3 Ledger Sync
+                  </span>
+                  <button
+                    onClick={() => setIsWalletMenuOpen(false)}
+                    className="text-[#666] hover:text-[#e5e5e5] text-xs font-bold"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                {walletError && (
+                  <div className="p-2.5 mb-3 bg-red-950/20 border border-red-900/50 rounded-sm text-[10px] text-red-500 space-y-1.5">
+                    <div className="flex gap-1.5 items-start">
+                      <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-bold leading-none">Connection Error</p>
+                        <p className="opacity-90 leading-relaxed mt-1 font-mono text-[9px] break-words">{walletError}</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={simulateWalletConnect}
+                      className="w-full py-1 bg-[#c5a059]/10 hover:bg-[#c5a059]/20 border border-[#c5a059]/30 text-[#c5a059] font-bold uppercase rounded-sm text-center text-[9px] tracking-wider transition-colors cursor-pointer"
+                    >
+                      Bypass & Connect Sandbox Wallet
+                    </button>
+                  </div>
+                )}
+
+                {walletAddress ? (
+                  <div className="space-y-3">
+                    <div className="space-y-1 bg-[#121212] p-2.5 rounded-sm border border-[#1f1f1f]">
+                      <span className="text-[#666] text-4xs uppercase tracking-widest block font-bold">
+                        Active Account
+                      </span>
+                      <span className="font-mono text-2xs text-[#e5e5e5] block break-all font-semibold">
+                        {walletAddress}
+                      </span>
+                      <span className="text-[10px] text-emerald-500 font-semibold block mt-1">
+                        ● Chronometer Ledger Synchronized
+                      </span>
+                    </div>
+
+                    <button
+                      onClick={() => {
+                        disconnectWallet();
+                        setIsWalletMenuOpen(false);
+                      }}
+                      className="w-full py-2 bg-[#0d0d0d] hover:bg-neutral-900 border border-[#1f1f1f] text-neutral-400 hover:text-red-500 font-bold uppercase tracking-widest rounded-sm text-center text-3xs transition-all duration-300 cursor-pointer"
+                    >
+                      Disconnect Identity
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <p className="text-3xs text-[#888] leading-relaxed">
+                      Authenticate with your MetaMask wallet to digitally sign certified timepieces, secure custom commissions, and log insurance certificates.
+                    </p>
+
+                    <div className="space-y-2">
+                      <button
+                        onClick={connectWallet}
+                        disabled={isWalletConnecting}
+                        className="w-full py-2 bg-[#c5a059] text-[#0a0a0a] hover:bg-yellow-600 font-extrabold uppercase tracking-widest rounded-sm text-center text-3xs transition-all duration-300 cursor-pointer disabled:opacity-50"
+                      >
+                        {isWalletConnecting ? "Requesting MetaMask..." : "Connect MetaMask"}
+                      </button>
+
+                      <button
+                        onClick={simulateWalletConnect}
+                        className="w-full py-2 bg-[#0d0d0d] hover:bg-[#141414] border border-[#1f1f1f] hover:border-[#c5a059]/30 text-[#888] hover:text-[#c5a059] font-extrabold uppercase tracking-widest rounded-sm text-center text-3xs transition-all duration-300 cursor-pointer"
+                      >
+                        Ledger Simulator
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
           <button
             onClick={() => {
               setIsCompareOpen(!isCompareOpen);
@@ -307,7 +496,7 @@ export default function App() {
           </p>
 
           {/* Tab Navigation selectors */}
-          <div className="flex gap-4.5 mt-10">
+          <div className="flex flex-wrap gap-4.5 mt-10">
             <button
               onClick={() => setActiveTab("browse")}
               className={`pb-2.5 text-xs font-bold uppercase tracking-widest border-b-2 transition-all duration-300 cursor-pointer ${
@@ -328,6 +517,16 @@ export default function App() {
             >
               The Bespoke Commission Salon
             </button>
+            <button
+              onClick={() => setActiveTab("tracker")}
+              className={`pb-2.5 text-xs font-bold uppercase tracking-widest border-b-2 transition-all duration-300 cursor-pointer ${
+                activeTab === "tracker"
+                  ? "border-[#c5a059] text-[#c5a059]"
+                  : "border-transparent text-[#666] hover:text-[#e5e5e5]"
+              }`}
+            >
+              Order Tracking Registry
+            </button>
           </div>
         </div>
       </section>
@@ -335,6 +534,11 @@ export default function App() {
       {/* ================= VIEW: COMMISSION CUSTOMIZER ================= */}
       {activeTab === "customizer" && (
         <BespokeBuilder onSaveToVault={handleSaveBespokeToVault} onInquire={handleInquireFromPlatform} />
+      )}
+
+      {/* ================= VIEW: ORDER REGISTRY TRACKER ================= */}
+      {activeTab === "tracker" && (
+        <OrderTracker orders={orders} />
       )}
 
       {/* ================= VIEW: BROWSE CATALOGUE ================= */}
@@ -357,16 +561,25 @@ export default function App() {
             <div className="max-w-7xl mx-auto">
               
               {/* Grid Header Info */}
-              <div className="flex items-center justify-between border-b border-[#1f1f1f] pb-4 mb-10">
-                <span className="text-3xs uppercase font-extrabold tracking-widest text-[#666]">
-                  Timepieces matching requirements: {sortedWatches.length} of {WATCHES.length}
-                </span>
-                
-                {filters.collections.length > 0 && (
-                  <span className="text-3xs bg-[#0d0d0d] text-[#888] border border-[#1f1f1f] px-2.5 py-0.5 rounded-sm font-semibold uppercase tracking-widest">
-                    Showing {filters.collections.join(", ")} lines
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#1f1f1f] pb-4 mb-10">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                  <span className="text-3xs uppercase font-extrabold tracking-widest text-[#666]">
+                    Timepieces matching requirements: {sortedWatches.length} of {WATCHES.length}
                   </span>
-                )}
+                  
+                  {filters.collections.length > 0 && (
+                    <span className="text-3xs bg-[#0d0d0d] text-[#888] border border-[#1f1f1f] px-2.5 py-0.5 rounded-sm font-semibold uppercase tracking-widest w-max">
+                      Showing {filters.collections.join(", ")} lines
+                    </span>
+                  )}
+                </div>
+
+                {/* Elegant Customer Support Banner */}
+                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-[#0d0d0d] border border-[#1f1f1f] rounded-full text-3xs text-[#888] font-semibold uppercase tracking-wider shadow-inner">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#c5a059] animate-pulse"></span>
+                  <span className="text-[#666]">Premium Concierge Support:</span>
+                  <a href="tel:8182087120" className="text-[#c5a059] hover:underline font-mono font-bold tracking-widest">(818) 208-7120</a>
+                </div>
               </div>
 
               {sortedWatches.length === 0 ? (
@@ -676,6 +889,10 @@ export default function App() {
         watch={selectedCheckoutWatch}
         isOpen={selectedCheckoutWatch !== null}
         onClose={() => setSelectedCheckoutWatch(null)}
+        onOrderPlaced={(newOrder) => {
+          const updated = [newOrder, ...orders];
+          saveOrdersToLocalStorage(updated);
+        }}
       />
 
       {/* ================= FOOTER LANDING ================= */}
@@ -697,6 +914,8 @@ export default function App() {
             <span>Five-Year guarantee lease</span>
             <span className="text-[#1f1f1f]">•</span>
             <span>Worldwide boutique service</span>
+            <span className="text-[#1f1f1f]">•</span>
+            <span className="text-[#888]">Customer Support: <a href="tel:8182087120" className="text-[#c5a059] font-mono hover:underline">(818) 208-7120</a></span>
           </div>
         </div>
 

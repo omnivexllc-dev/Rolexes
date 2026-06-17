@@ -41,3 +41,18 @@ export interface DesignConfigState {
   bracelet: "Oyster" | "Jubilee" | "President" | "Oysterflex";
   diameter: number;
 }
+
+export interface Order {
+  orderNumber: string;
+  clientName: string;
+  clientEmail: string;
+  clientPhone: string;
+  deliveryMethod: string;
+  customEngraving?: string;
+  premiumBox: boolean;
+  watch: Watch;
+  price: number;
+  date: string;
+  status: "Registered" | "Processing" | "Quality Control" | "Secured in Depot" | "Handed to Courier" | "Delivered";
+}
+
