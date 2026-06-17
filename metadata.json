@@ -1,0 +1,6 @@
+{
+  "name": "Luxury Watch Finder",
+  "description": "A premium luxury watch search, dynamic customizer, and comparison engine for watch collectors with advanced filtration, live pricing, and wishlist vault.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
